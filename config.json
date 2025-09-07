@@ -12,12 +12,12 @@
     "allowInbox": true,
     "commandDisabled": [],
     "eventDisabled": [],
-    "BOTNAME": "",
-    "AMDIN_NAME": "",
+    "BOTNAME": "𝑁𝑌𝑂",
+    "AMDIN_NAME": "𝐴𝑏𝑑𝑒𝑙𝑎𝑧𝑖𝑧 & 𝐾ℎ𝑎𝑙𝑖𝑙",
     "FACEBOOK_ADMIN": "",
     "PREFIX": ".",
     "ADMINBOT": [
-        "61571422601081"
+        "61579963472784"
     ],
     "NDH": [
         ""
@@ -55,7 +55,7 @@
         "sendAttachments": {
             "status": true,
             "random": true,
-            "url": "https://i.imgur.com/LKkw8SL.jpg"
+            "url": ""
         }
     },
     "minecraft": {

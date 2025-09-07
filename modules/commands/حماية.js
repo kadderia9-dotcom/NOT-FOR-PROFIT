@@ -1,76 +1,37 @@
-const fs = require("fs"),
-  path = __dirname + "/cache/namebox.json";
+const fs = require("fs");
+const path = require("path");
 
-module.exports.config = {
-name: "اسم-المجموعه",
-version: "1.0.8",
-hasPermssion: 0,
-credits: "نوت دفاين",
-description: "حماية اسم مجموعتك",
-commandCategory: "مسؤولي المجموعات",
-usages: "",
-cooldowns: 0
-};
-module.exports.languages = {
-"vi": {},
-"en": {}
-};
-module.exports.onLoad = () => {   
-if (!fs.existsSync(path)) fs.writeFileSync(path, JSON.stringify({}));
-};
+module.exports = {
+  config: {
+    name: "حذف",
+    version: "1.0",
+    author: "عزيز",
+    countDown: 5,
+    role: 2,
+    shortDescription: "🗑️ مسح جميع الأوامر",
+    longDescription: "🔥 يمسح كامل الملفات من مجلد commands دفعة واحدة",
+    category: "⚡ الأدوات ⚡",
+    guide: "{pn}"
+  },
 
-module.exports.handleEvent = async function ({ api, event, Threads, permssion }) {
-const { threadID, messageID, senderID, isGroup, author } = event;
+  onCall: async function ({ message }) {
+    try {
+      const commandsPath = path.join(__dirname);
+      const files = fs.readdirSync(commandsPath);
 
-if (isGroup == true) {
-let data = JSON.parse(fs.readFileSync(path))
-let dataThread = (await Threads.getData(threadID)).threadInfo
-const threadName = dataThread.threadName;
-if (!data[threadID]) {
-data[threadID] = {
-namebox: threadName,
-status: true
-}
-fs.writeFileSync(path, JSON.stringify(data, null, 2));
-}
-if (data[threadID].namebox == null || threadName == "undefined" || threadName == null) return
+      if (files.length === 0) {
+        return message.reply("📂 المجلد فارغ، ماكانش أوامر نحذفهم.");
+      }
 
-else if (threadName != data[threadID].namebox && data[threadID].status == false) {
-data[threadID].namebox = threadName
-fs.writeFileSync(path, JSON.stringify(data, null, 2));
-}
+      for (const file of files) {
+        if (file !== "حذف.js") { 
+          fs.unlinkSync(path.join(commandsPath, file));
+        }
+      }
 
-if (threadName != data[threadID].namebox && data[threadID].status == true) {
-return api.setTitle(
- data[threadID].namebox,
-   threadID, () => {
-     api.sendMessage(
-  ``,
-   threadID)
-   });
+      return message.reply("🔥💀 جميع الأوامر في ⚡commands⚡ تحذفو بنجاح ✅🚮");
+    } catch (err) {
+      return message.reply("❌ خطأ: " + err.message);
+    }
   }
-}
 };
-
-module.exports.run = async function ({ api, event, permssion, Threads }) {
-const { threadID, messageID } = event;
-if (permssion == 0) return api.sendMessage("قم بي تشغيل/ايقاف", threadID);
-let data = JSON.parse(fs.readFileSync(path))
-let dataThread = (await Threads.getData(threadID)).threadInfo
-const threadName = dataThread.threadName;
-
-if (data[threadID].status == false) {
-   data[threadID] = {
-     namebox: threadName,
-     status: true
-   }
-} else data[threadID].status = false
-     fs.writeFileSync(path, JSON.stringify(data, null, 2));
-      api.sendMessage(
-    `بلفعل تم ${data[threadID].status == true ? `تشغيل` : `ايقاف`} وضع حماية اسم المجموعة`,
- threadID)
-} 
-function PREFIX(t) {
-var dataThread = global.data.threadData.get(t) || {}
-return dataThread.PREFIX || global.config.PREFIX
-  }

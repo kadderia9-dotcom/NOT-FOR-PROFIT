@@ -1,9 +1,9 @@
 module.exports.config = {
   name: "joinNoti",
   eventType: ["log:subscribe"],
-  version: "1.0.1",
-  credits: "Mirai Team",
-  description: "Thông báo bot hoặc người vào nhóm",
+  version: "2.0.0",
+  credits: "『𝐃𝐞𝐯𝐞𝐥𝐨𝐩𝐞𝐫𝐬』 𝐀𝐛𝐝𝐞𝐥𝐚𝐳𝐢𝐳 ✦ 𝐊𝐡𝐚𝐥𝐢𝐥",
+  description: "Stylish welcome message when bot or users join group",
   dependencies: {
     "fs-extra": ""
   }
@@ -11,13 +11,32 @@ module.exports.config = {
 
 module.exports.run = async function({ api, event, Users }) {
   const { threadID } = event;
+  const BOTNAME = "𝑁𝑌𝑂 𝐵𝑂𝑇";
 
+  // When bot joins group
   if (event.logMessageData.addedParticipants.some(i => i.userFbId == api.getCurrentUserID())) {
-    api.changeNickname(`[ ${global.config.PREFIX} ] • ${(!global.config.BOTNAME) ? "Made by CatalizCS and SpermLord" : global.config.BOTNAME}`, threadID, api.getCurrentUserID());
-    api.sendMessage(`[𝐊𝐞̂́𝐭 𝐍𝐨̂́𝐢 𝐓𝐡𝐚̀𝐧𝐡 𝐂𝐨̂𝐧𝐠]`, threadID);
-  } else {
+    api.changeNickname(`[ ${global.config.PREFIX} ] • ${BOTNAME}`, threadID, api.getCurrentUserID());
+    
+    return api.sendMessage(
+`✿━━━━━━━━━━━━━━✿
+✨ 𝑩𝑶𝑻 𝑪𝑶𝑵𝑵𝑬𝑪𝑻𝑬𝑫 ✨
+
+${BOTNAME} is now active in this group 💀
+Use commands with prefix: 『 ${global.config.PREFIX} 』
+
+✿━━━━━━━━━━━━━━✿
+『𝐃𝐞𝐯𝐞𝐥𝐨𝐩𝐞𝐫𝐬』
+➤ ⚡ 𝐀𝐛𝐝𝐞𝐥𝐚𝐳𝐢𝐳
+» https://www.facebook.com/aziz.jr.945350
+
+➤ ⚡ 𝐊𝐡𝐚𝐥𝐢𝐥
+» https://www.facebook.com/KhalilDaflawi44
+✿━━━━━━━━━━━━━━✿`, threadID);
+  } 
+  // When new members join
+  else {
     try {
-      const { createReadStream, existsSync, mkdirSync } = global.nodemodule["fs-extra"];
+      const { createReadStream, existsSync } = global.nodemodule["fs-extra"];
       const { threadName, participantIDs } = await api.getThreadInfo(threadID);
 
       const nameArray = [];
@@ -43,50 +62,50 @@ module.exports.run = async function({ api, event, Users }) {
       let msg = "";
 
       if (typeof threadData.customJoin === "undefined") {
-        msg = `✿——————————————✿\n𝐗𝐢𝐧 𝐜𝐡𝐚̀𝐨: [ {name} ]\n𝐂𝐡𝐚̀𝐨 𝐦𝐮̛̀𝐧𝐠 𝐛𝐚̣𝐧 𝐝̄𝐞̂́𝐧 𝐯𝐨̛́𝐢: [ {threadName} ]\n𝐁𝐚̣𝐧 𝐥𝐚̀ 𝐭𝐡𝐚̀𝐧𝐡 𝐯𝐢𝐞̂𝐧 𝐬𝐨̂́: [ {soThanhVien} ]\n𝐃̄𝐮̛𝐨̛̣𝐜 𝐭𝐡𝐞̂𝐦 𝐛𝐨̛̉𝐢: [ {author} ]\n𝐂𝐡𝐮́𝐜 𝐛𝐚̣𝐧 𝐜𝐨́ 𝐦𝐨̣̂𝐭 𝐧𝐠𝐚̀𝐲 𝐯𝐮𝐢 𝐯𝐞̉ 💝\n✿——————————————✿`;
+        msg = `✿━━━━━━━━━━━━━━✿
+👤 𝑾𝒆𝒍𝒄𝒐𝒎𝒆: {name}  
+🎉 You are member number: {soThanhVien}  
+💬 Group: {threadName}  
+➤ Added by: {author}  
+📅 Date: {bok}  
+⌚ Time: {get}  
+
+Enjoy your time with us 💝
+✿━━━━━━━━━━━━━━✿
+『𝐃𝐞𝐯𝐞𝐥𝐨𝐩𝐞𝐫𝐬』
+➤ ⚡ 𝐀𝐛𝐝𝐞𝐥𝐚𝐳𝐢𝐳
+» https://www.facebook.com/aziz.jr.945350
+
+➤ ⚡ 𝐊𝐡𝐚𝐥𝐢𝐥
+» https://www.facebook.com/KhalilDaflawi44
+✿━━━━━━━━━━━━━━✿`;
       } else {
         msg = threadData.customJoin;
       }
 
       const getData = await Users.getData(event.author);
-      const nameAuthor = typeof getData.name === "undefined" ? "link join" : getData.name;
+      const nameAuthor = typeof getData.name === "undefined" ? "Link Join" : getData.name;
 
-      const time = require("moment-timezone").tz("Asia/Ho_Chi_Minh");
-      const gio = time.format("HH");
       const moment = require("moment-timezone");
-      const bok = moment.tz("Asia/Ho_Chi_Minh").format("DD/MM/YYYY" || "HH:mm:ss");
+      const time = moment.tz("Asia/Ho_Chi_Minh");
+      const gio = time.format("HH");
+      const bok = time.format("DD/MM/YYYY");
 
       let get = "";
-      if (gio >= 5) get = "𝐁𝐮𝐨̂̉𝐢 𝐒𝐚́𝐧𝐠";
-      if (gio >= 11) get = "𝐁𝐮𝐨̂̉𝐢 𝐓𝐫𝐮̛𝐚";
-      if (gio >= 14) get = "𝐁𝐮𝐨̂̉𝐢 𝐂𝐡𝐢Ề̀u";
-      if (gio >= 19) get = "𝐁𝐮𝐨̂̉𝐢 𝐓𝐨̂́𝐢";
+      if (gio >= 5 && gio < 11) get = "Morning";
+      else if (gio >= 11 && gio < 14) get = "Noon";
+      else if (gio >= 14 && gio < 19) get = "Afternoon";
+      else get = "Evening";
 
       msg = msg
         .replace(/\{name}/g, nameArray.join(", "))
-        .replace(/\{type}/g, memLength.length > 1 ? "𝐜𝐚́𝐜 𝐛𝐚̣𝐧" : "𝐛𝐚̣𝐧")
         .replace(/\{soThanhVien}/g, memLength.join(", "))
         .replace(/\{threadName}/g, threadName)
-        .replace(/\{get}/g, get)
         .replace(/\{author}/g, nameAuthor)
-        .replace(/\{bok}/g, bok);
+        .replace(/\{bok}/g, bok)
+        .replace(/\{get}/g, get);
 
-      const path = require("path");
-      const pathGif = path.join(__dirname, "cache", "joinGif", `${1}.mp5`);
-
-      if (existsSync(pathGif)) {
-        formPush = { body: msg, attachment: createReadStream(pathGif), mentions };
-      } else {
-        formPush = { body: msg, mentions };
-      }
-
-      if (existsSync(pathGif)) {
-        formPush = { body: msg, attachment: createReadStream(pathGif), mentions };
-      } else {
-        formPush = { body: msg, mentions };
-      }
-
-      return api.sendMessage(formPush, threadID);
+      return api.sendMessage({ body: msg, mentions }, threadID);
     } catch (e) {
       console.log(e);
     }

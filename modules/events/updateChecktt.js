@@ -1,9 +1,9 @@
 module.exports.config = {
-    name: "updateChecktt",
+    name: "تحديث التحقق",
     eventType: ["log:unsubscribe"],
     version: "1.0.0",
-    credits: "D-Jukie",
-    description: "Xóa data tương tác người dùng khi out",
+    credits: "خليلو دفلاوي",
+    description: "مسح بيانات تفاعل المستخدم عند الخروج",
 };
 
 module.exports.run = async ({ event, api, Threads }) => { 
