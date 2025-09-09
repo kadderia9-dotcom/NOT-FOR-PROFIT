@@ -1,40 +1,142 @@
+const scdl = require('soundcloud-downloader').default
+const fs = require('fs')
+const path = require('path')
+const axios = require('axios')
+
 module.exports.config = {
-  name: "سيم",
-  version: "4.3.7",
-  hasPermssion: 1,
-  credits: "عمر", 
-  description: "استخدم الامر .سيم تشغيل \n .سيم ايقاف",
-  commandCategory: "خدمات",
-  usages: "[نص]",
-  cooldowns: 5,
-  dependencies: {
-      axios: ""
-  }
+    name: "سمعني",
+    version: "1.0.2",
+    hasPermssion: 0,
+    credits: "ميكاسا",
+    description: "بحث وتنزيل الأغاني من SoundCloud",
+    commandCategory: "موسيقى",
+    usages: "[اسم الأغنية]",
+    cooldowns: 5,
 };
 
-async function simsimi(a, b, c) {
-  const d = global.nodemodule.axios, g = (a) => encodeURIComponent(a);
-  try {
-      var { data: j } = await d({ url: `https://simsimi.fun/api/v2/?mode=talk&lang=ar&message=${g(a)}&filter=true`, method: "GET" });
-      return { error: !1, data: j };
-  } catch (p) {
-      return { error: !0, data: {} };
-  }
+const searchResults = {};
+
+async function searchTracks(keyword, limit = 5) {
+    const searchResult = await scdl.search({
+        query: keyword,
+        limit: limit,
+        resourceType: 'tracks'
+    });
+
+    if (!searchResult || !searchResult.collection || searchResult.collection.length === 0) {
+        return [];
+    }
+
+    return searchResult.collection.map(track => ({
+        title: track.title,
+        artist: track.user.username,
+        duration: formatDuration(track.duration),
+        url: track.permalink_url,
+        playCount: track.playback_count,
+        likeCount: track.likes_count
+    }));
 }
 
-module.exports.onLoad = async function () {
-  "undefined" == typeof global && (global = {}), "undefined" == typeof global.simsimi && (global.simsimi = new Map);
+async function downloadTrack(url) {
+    const track = await scdl.getInfo(url);
+    const stream = await scdl.downloadFormat(url, 'audio/mpeg');
+
+    const fileName = `${track.user.username} - ${track.title}.mp3`.replace(/[/\\?%*:|"<>]/g, '-');
+    const filePath = path.join(__dirname, fileName);
+
+    return new Promise((resolve, reject) => {
+        const writeStream = fs.createWriteStream(filePath);
+        stream.pipe(writeStream);
+        stream.on('end', () => resolve({ ...track, filePath }));
+        stream.on('error', reject);
+    });
+}
+
+function formatDuration(ms) {
+    const seconds = Math.floor(ms / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+}
+
+module.exports.run = async function ({ api, event, args }) {
+    const { threadID, messageID, senderID } = event;
+    const keyword = args.join(" ");
+
+    if (!keyword) {
+        return api.sendMessage("من فضلك، اكتب اسم الأغنية باش نقلبولك.", threadID, messageID);
+    }
+
+    try {
+        const tracks = await searchTracks(keyword);
+        if (tracks.length === 0) {
+            return api.sendMessage("ماعنديش الأغنية هذي. جرب حاجة أخرى.", threadID, messageID);
+        }
+
+        let msg = "🎧 **نتائج البحث**:\n\n";
+        tracks.forEach((track, index) => {
+            msg += `**${index + 1}.** ${track.title} \n 👤 **الفنان:** ${track.artist}\n\n`;
+        });
+        msg += "رد على الرقم باش تحمل الأغنية.";
+
+        searchResults[senderID] = tracks;
+
+        return api.sendMessage(msg, threadID, (error, info) => {
+            global.client.handleReply.push({
+                name: this.config.name,
+                messageID: info.messageID,
+                author: senderID,
+                type: "result"
+            });
+        }, messageID);
+    } catch (error) {
+        console.error(error);
+        return api.sendMessage("كاين خطأ في البحث على الأغنية.", threadID, messageID);
+    }
 };
 
-module.exports.handleEvent = async function ({ api: b, event: a }) {
-  const { threadID: c, messageID: d, senderID: e, body: f } = a, g = (e) => b.sendMessage(e, c, d);
-  if (global.simsimi.has(c)) {
-      if (e == b.getCurrentUserID() || "" == f || d == global.simsimi.get(c)) return;
-      var { data: h, error: i } = await simsimi(f, b, a);
-      if (i) return;
-      if (!h.success) return g(h.error);
-      return g(h.success);
-  }
+module.exports.handleReply = async function ({ api, event, handleReply }) {
+    const { threadID, messageID, senderID, body } = event;
+
+    if (handleReply.author != senderID) return;
+
+    const choice = parseInt(body);
+    if (isNaN(choice) || choice <= 0 || choice > searchResults[senderID].length) {
+        return api.sendMessage("الاختيار موش صحيح.", threadID, messageID);
+    }
+
+    const selectedTrack = searchResults[senderID][choice - 1];
+
+    api.unsendMessage(handleReply.messageID);
+
+    try {
+        const downloadResult = await downloadTrack(selectedTrack.url);
+        const attachment = fs.createReadStream(downloadResult.filePath);
+
+        const trackInfo = `
+🎵 **الأغنية**: ${downloadResult.title}
+🎤 **الفنان**: ${downloadResult.user.username}
+⏱ **المدة**: ${formatDuration(downloadResult.duration)}
+👁 **عدد المشاهدات**: ${downloadResult.playback_count.toLocaleString()}
+❤ **عدد الإعجابات**: ${downloadResult.likes_count.toLocaleString()}
+        `.trim();
+
+        await api.sendMessage(
+            {
+                body: trackInfo,
+                attachment: attachment
+            },
+            threadID,
+            () => fs.unlinkSync(downloadResult.filePath),
+            messageID
+        );
+    } catch (error) {
+        console.error(error);
+        return api.sendMessage("كاين خطأ في تحميل الأغنية.", threadID, messageID);
+    }
+
+    delete searchResults[senderID];
+};  }
 };
 
 module.exports.run = async function ({ api: b, event: a, args: c }) {
